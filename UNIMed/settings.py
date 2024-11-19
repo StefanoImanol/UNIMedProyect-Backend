@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-bdsfrc*u1&qych1+yle=)99$n85!4q+$ut2=^k)m0q+2xult4m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Permite conexiones desde cualquier IP
 
 
 # Application definition
@@ -81,13 +81,17 @@ WSGI_APPLICATION = 'UNIMed.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'unimed',  # Nombre de tu base de datos
-        'USER': 'postgres',  # Usuario de PostgreSQL
-        'PASSWORD': 'Arleth#2023',  # Contraseña del usuario
-        'HOST': 'localhost',  # Host de la base de datos
-        'PORT': '5433',  # Puerto (5432 es el predeterminado de PostgreSQL)
+        'NAME': 'railway',  # Nombre de tu base de datos
+        'USER': 'postgres',  # Usuario
+        'PASSWORD': 'TVwQEVFOhWNrfgJxTYsYSojLJqsifMBO',  # Contraseña proporcionada por Railway
+        'HOST': 'autorack.proxy.rlwy.net',  # Host público
+        'PORT': '34214',  # Puerto proporcionado
     }
 }
+
+
+
+
 
 
 
@@ -136,3 +140,4 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',  # URL del frontend de Angular en desarrollo
     'https://tu-frontend-deploy.com',  # URL del frontend cuando esté en producción
 ]
+
