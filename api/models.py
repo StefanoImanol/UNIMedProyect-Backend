@@ -1,40 +1,66 @@
 from django.db import models
 
+# Modelo de Usuario
 class Usuario(models.Model):
-    usuario_id = models.CharField(max_length=16, primary_key=True)
+    usuario_id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=64)
+    apellidos = models.CharField(max_length=64, null=True, blank=True)
     correo = models.EmailField(max_length=64)
     contraseña = models.CharField(max_length=16)
-    rol = models.CharField(max_length=16)  # Puede ser 'Paciente', 'Administrador', 'Medico'
+    ROL_CHOICES = [
+        ('Paciente', 'Paciente'),
+        ('Administrador', 'Administrador'),
+        ('Medico', 'Medico'),
+    ]
+    rol = models.CharField(max_length=16, choices=ROL_CHOICES)
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} {self.apellidos or ''}".strip()
 
-
+# Modelo de Especialidad
 class Especialidad(models.Model):
-    nombre_especialidad = models.CharField(max_length=32, primary_key=True)
-    horario = models.CharField(max_length=128)
+    especialidad_id = models.AutoField(primary_key=True)  # Clave primaria autoincremental
+    nombre_especialidad = models.CharField(max_length=32, unique=True)
 
     def __str__(self):
         return self.nombre_especialidad
 
-
-class Medico(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
-    horario = models.CharField(max_length=128)
-    nombre_especialidad = models.ForeignKey(Especialidad, on_delete=models.CASCADE)
+# Modelo de Horario
+class Horario(models.Model):
+    especialidad = models.ForeignKey('Especialidad', on_delete=models.CASCADE, related_name='horarios')
+    DIAS_CHOICES = [
+        ('Lunes', 'Lunes'),
+        ('Martes', 'Martes'),
+        ('Miércoles', 'Miércoles'),
+        ('Jueves', 'Jueves'),
+        ('Viernes', 'Viernes'),
+        ('Sábado', 'Sábado'),
+        ('Domingo', 'Domingo'),
+    ]
+    dia = models.CharField(max_length=16, choices=DIAS_CHOICES)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
 
     def __str__(self):
-        return f"{self.usuario.nombre} - {self.nombre_especialidad}"
+        return f"{self.especialidad.nombre_especialidad} - {self.dia}: {self.hora_inicio} - {self.hora_fin}"
 
+# Modelo de Médico
+class Medico(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
+    especialidad = models.ForeignKey(Especialidad, on_delete=models.CASCADE)
+    horarios = models.ManyToManyField(Horario)
 
+    def __str__(self):
+        return f"{self.usuario.nombre} - {self.especialidad.nombre_especialidad}"
+
+# Modelo de Administrador
 class Administrador(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
 
     def __str__(self):
         return self.usuario.nombre
 
-
+# Modelo de Paciente
 class Paciente(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
     fecha_nacimiento = models.DateTimeField()
@@ -43,21 +69,21 @@ class Paciente(models.Model):
     def __str__(self):
         return self.usuario.nombre
 
-
+# Modelo de Cita
 class Cita(models.Model):
-    cita_id = models.CharField(max_length=16, primary_key=True)
+    cita_id = models.AutoField(primary_key=True)
     fecha = models.DateField()
     hora = models.TimeField()
-    estado = models.CharField(max_length=16)  # Estados posibles: 'Agendada', 'Cancelada', 'Completada'
-    usuario_paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
-    usuario_medico = models.ForeignKey(Medico, on_delete=models.CASCADE)
+    estado = models.CharField(max_length=16)
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    medico = models.ForeignKey(Medico, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Cita {self.cita_id} - {self.usuario_paciente.usuario.nombre} con {self.usuario_medico.usuario.nombre}"
+        return f"Cita {self.cita_id} - {self.paciente.usuario.nombre} con {self.medico.usuario.nombre}"
 
-
+# Modelo de Notificación
 class Notificacion(models.Model):
-    notificacion_id = models.CharField(max_length=8, primary_key=True)
+    notificacion_id = models.AutoField(primary_key=True)
     mensaje = models.CharField(max_length=256)
     fecha_envio = models.DateTimeField()
     cita = models.ForeignKey(Cita, on_delete=models.CASCADE)
