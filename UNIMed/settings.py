@@ -140,4 +140,6 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',  # URL del frontend de Angular en desarrollo
     'https://tu-frontend-deploy.com',  # URL del frontend cuando esté en producción
 ]
+CORS_ALLOW_ALL_ORIGINS = True
+
 
