@@ -18,9 +18,18 @@ from django.contrib import admin
 from django.urls import path
 from django.shortcuts import redirect  # Cambiar la importación de redirect
 from api.views import login_view
+from api.views import register_view
+from api.views import profile_data_view, update_profile_view
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', login_view, name='login'),
     path('', lambda request: redirect('/login/')),  # Asegúrate de que redirige a /login/
+    path('register/', register_view, name='register'),
+    path('api/profile-data/', profile_data_view, name='profile_data'),
+    path('api/update-profile/', update_profile_view, name='update_profile'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

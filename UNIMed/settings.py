@@ -28,7 +28,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']  # Permite conexiones desde cualquier IP
 
 
+LOGIN_URL = '/login/'
+
+
 # Application definition
+AUTH_USER_MODEL = 'api.Usuario'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -46,13 +51,17 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+     # Tu middleware JSON
+    'api.middleware.JSONMiddleware',  # Cambia 'api' al nombre de tu aplicación
 ]
+
+
 
 ROOT_URLCONF = 'UNIMed.urls'
 
@@ -114,7 +123,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -135,11 +143,58 @@ STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',  # URL del frontend de Angular en desarrollo
-    'https://tu-frontend-deploy.com',  # URL del frontend cuando esté en producción
-]
-CORS_ALLOW_ALL_ORIGINS = True
+# Habilitar cookies de sesión
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
+# Cookies de sesión
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_COOKIE_SAMESITE = 'Lax'  # Cambiar a 'None' si usas dominios diferentes (y HTTPS en producción).
+SESSION_COOKIE_SECURE = False    # Cambiar a True en producción con HTTPS.
+
+# Configuración de CORS y CSRF
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:4200",
+    "http://localhost:4200",
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:4200",
+    "http://localhost:4200",
+]
+
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_SAMESITE = 'Lax'  # o 'None' si usas HTTPS y dominios diferentes
+# Expiración de la sesión
+SESSION_COOKIE_AGE = 86400  # 1 día en segundos.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+# Opciones avanzadas de JWT
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token válido por 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Refresh token válido por 1 día
+}
 

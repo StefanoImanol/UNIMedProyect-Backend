@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Usuario, Especialidad, Medico, Administrador, Paciente, Cita, Notificacion, Horario
 
 # Registra los modelos
+
 admin.site.register(Usuario)
 admin.site.register(Horario)
 admin.site.register(Especialidad)

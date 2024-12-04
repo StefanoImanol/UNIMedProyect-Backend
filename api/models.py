@@ -3,29 +3,54 @@ from django.db import models
 # Modelo de Usuario
 from django.contrib.auth.hashers import make_password, check_password
 
-class Usuario(models.Model):
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+
+class UsuarioManager(BaseUserManager):
+    def create_user(self, correo, contraseña=None, **extra_fields):
+        if not correo:
+            raise ValueError("El correo electrónico es obligatorio")
+        correo = self.normalize_email(correo)
+        usuario = self.model(correo=correo, **extra_fields)
+        usuario.set_password(contraseña)
+        usuario.save(using=self._db)
+        return usuario
+
+    def create_superuser(self, correo, contraseña=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(correo, contraseña, **extra_fields)
+
+class Usuario(AbstractBaseUser):
     usuario_id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=64)
     apellidos = models.CharField(max_length=64, null=True, blank=True)
     correo = models.EmailField(max_length=64, unique=True)
-    contraseña = models.CharField(max_length=128)  # Contraseña encriptada
-    ROL_CHOICES = [
-        ('Paciente', 'Paciente'),
-        ('Administrador', 'Administrador'),
-        ('Medico', 'Medico'),
-    ]
-    rol = models.CharField(max_length=16, choices=ROL_CHOICES)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    USERNAME_FIELD = 'correo'
+    REQUIRED_FIELDS = ['nombre', 'apellidos']
+
+    objects = UsuarioManager()
 
     def __str__(self):
         return self.correo
 
-    def set_password(self, raw_password):
-        """Encripta y guarda la contraseña."""
-        self.contraseña = make_password(raw_password)
 
-    def check_password(self, raw_password):
-        """Verifica la contraseña encriptada."""
-        return check_password(raw_password, self.contraseña)
+class Paciente(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
+    fecha_nacimiento = models.DateField()
+    codigo_uni = models.CharField(max_length=9, unique=True)
+    direccion = models.CharField(max_length=255, null=True, blank=True)  # Campo opcional
+    telefono = models.CharField(max_length=15, null=True, blank=True)  # Campo opcional
+    contacto_emergencia = models.CharField(max_length=15, null=True, blank=True)  # Campo opcional
+
+    def __str__(self):
+        return f"{self.usuario.nombre} {self.usuario.apellidos} - {self.codigo_uni}"
 
 
 # Modelo de Especialidad
@@ -72,13 +97,6 @@ class Administrador(models.Model):
         return self.usuario.nombre
 
 # Modelo de Paciente
-class Paciente(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
-    fecha_nacimiento = models.DateTimeField()
-    codigo_uni = models.CharField(max_length=9)
-
-    def __str__(self):
-        return self.usuario.nombre
 
 # Modelo de Cita
 class Cita(models.Model):
