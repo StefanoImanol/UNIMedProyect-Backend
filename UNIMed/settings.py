@@ -31,8 +31,7 @@ ALLOWED_HOSTS = ['*']  # Permite conexiones desde cualquier IP
 LOGIN_URL = '/login/'
 
 
-# Application definition
-AUTH_USER_MODEL = 'api.Usuario'
+
 
 
 INSTALLED_APPS = [
@@ -42,10 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',  # Para Django REST Framework
-    'api',  # Tu aplicación
-    'corsheaders',
+    'rest_framework',  # Django REST Framework
+    'corsheaders',     # Middleware para CORS
+    'api',             # Tu aplicación
 ]
+
 
 
 MIDDLEWARE = [
@@ -57,7 +57,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     # Tu middleware JSON
     'api.middleware.JSONMiddleware',  # Cambia 'api' al nombre de tu aplicación
 ]
 
@@ -138,40 +137,48 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+# settings.py
+
+# URL para archivos estáticos
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
+# Configuración de la base de datos (ajusta según tu configuración)
+# DATABASES = { ... }
 
 # Habilitar cookies de sesión
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Cookies de sesión
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_SAMESITE = 'Lax'  # Cambiar a 'None' si usas dominios diferentes (y HTTPS en producción).
-SESSION_COOKIE_SECURE = False    # Cambiar a True en producción con HTTPS.
+SESSION_COOKIE_SAMESITE = 'Lax'  # Cambiar a 'None' si usas dominios diferentes y HTTPS en producción.
+SESSION_COOKIE_SECURE = False      # Cambiar a True en producción con HTTPS.
 
-# Configuración de CORS y CSRF
+# Expiración de la sesión
+SESSION_COOKIE_AGE = 86400  # 1 día en segundos.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Configuración de CORS
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:4200",
     "http://localhost:4200",
 ]
 
-
+# Configuración de CSRF
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:4200",
     "http://localhost:4200",
+    # Agrega aquí otros dominios permitidos en producción
 ]
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-
-
 CSRF_COOKIE_NAME = 'csrftoken'
-CSRF_COOKIE_SAMESITE = 'Lax'  # o 'None' si usas HTTPS y dominios diferentes
-# Expiración de la sesión
-SESSION_COOKIE_AGE = 86400  # 1 día en segundos.
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+CSRF_COOKIE_SAMESITE = 'Lax'  # Cambiar a 'None' si usas HTTPS y dominios diferentes.
+
+# Hosts permitidos
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+# Agrega aquí otros dominios permitidos en producción
+
+# Configuración de logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -185,16 +192,39 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+
+
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+AUTH_USER_MODEL = 'api.Usuario'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'usuario_id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'AUTH_USER_MODEL': 'api.Usuario',
+    'USERNAME_FIELD': 'correo',  # Aseguramos que SimpleJWT use 'correo'
 }
 
-# Opciones avanzadas de JWT
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token válido por 1 hora
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Refresh token válido por 1 día
-}
+
 
