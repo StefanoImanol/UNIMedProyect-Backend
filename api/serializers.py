@@ -12,6 +12,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         # Añadir información personalizada al token si es necesario
         token['correo'] = user.correo
+        token['rol'] = user.rol  # Añadir el rol al token
         return token
 
     def validate(self, attrs):
@@ -33,5 +34,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
+            'rol': user.rol,  # Incluye el rol en la respuesta
         }
 

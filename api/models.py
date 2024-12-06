@@ -3,29 +3,41 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import make_password, check_password
 
 class UsuarioManager(BaseUserManager):
-    def create_user(self, username, correo, contraseña=None, **extra_fields):
+    def create_user(self, correo, contraseña=None, nombre=None, **extra_fields):
         if not correo:
             raise ValueError("El correo electrónico es obligatorio")
+        
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_staff', False)
 
-        usuario = self.model(username=username, correo=self.normalize_email(correo), **extra_fields)
+        usuario = self.model(
+            correo=self.normalize_email(correo),
+            nombre=nombre,
+            **extra_fields
+        )
         if contraseña:
             usuario.set_password(contraseña)  # Asegúrate de cifrar las contraseñas
         usuario.save(using=self._db)
         return usuario
 
-
-    def create_superuser(self, username, correo, contraseña=None, **extra_fields):
+    def create_superuser(self, correo, contraseña=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        return self.create_user(username, correo, contraseña, **extra_fields)
+        return self.create_user(correo, contraseña, **extra_fields)
 
 
 class Usuario(AbstractBaseUser):
+    ROLES = [
+        ('Paciente', 'Paciente'),
+        ('Medico', 'Medico'),
+        ('Administrador', 'Administrador'),
+    ]
     usuario_id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=64)
     apellidos = models.CharField(max_length=64, null=True, blank=True)
     correo = models.EmailField(max_length=64, unique=True)
+    rol = models.CharField(max_length=20, choices=ROLES, default='Paciente')  # Campo ROL
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -102,20 +114,16 @@ class Administrador(models.Model):
 
 # Modelo de Cita
 class Cita(models.Model):
-    ESTADO_CHOICES = [
-        ('pendiente', 'Pendiente'),
-        ('confirmada', 'Confirmada'),
-        ('cancelada', 'Cancelada'),
-    ]
     cita_id = models.AutoField(primary_key=True)
     fecha = models.DateField()
     hora = models.TimeField()
-    estado = models.CharField(max_length=16, choices=ESTADO_CHOICES, default='pendiente')
+    estado = models.BooleanField(default=False)  # Cambiado a BooleanField con valor predeterminado False
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
     medico = models.ForeignKey(Medico, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"Cita {self.cita_id} - {self.paciente.usuario.nombre} con {self.medico.usuario.nombre}"
+
 
 # Modelo de Notificación
 class Notificacion(models.Model):
