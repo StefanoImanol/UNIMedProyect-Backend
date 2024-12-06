@@ -7,28 +7,37 @@ from api.models import Paciente
 from datetime import date, datetime
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
-from django.contrib.auth import authenticate, login
-
-from django.contrib.auth import login
-
+from django.contrib.auth import authenticate
 from rest_framework_simplejwt.views import TokenObtainPairView
 from api.serializers import CustomTokenObtainPairSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from api.models import Paciente
 from django.shortcuts import get_object_or_404
 from api.models import Medico, Horario, Cita
 from django.utils.dateparse import parse_date
+from rest_framework import status
+from django.db import transaction
+from rest_framework import status
+from api.models import Especialidad
+from django.utils.timezone import now
+from django.db.models import F
+from django.db import transaction
+from datetime import timedelta
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from api.models import Especialidad, Medico, Horario, Cita
+from django.utils.dateparse import parse_time, parse_date
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+
+#################################### vista login y generación de tokens ###################################
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
         print("CustomTokenObtainPairView ejecutado")
         return super().post(request, *args, **kwargs)
-      
-from django.http import JsonResponse
-from rest_framework_simplejwt.tokens import RefreshToken
 
 def generar_tokens_para_usuario(usuario):
     try:
@@ -59,7 +68,7 @@ def login_view(request):
         except Exception as e:
             return JsonResponse({"error": f"Error procesando solicitud: {str(e)}"}, status=500)
     return JsonResponse({"error": "Por favor, usa POST para enviar los datos"}, status=405)
-
+#################################### vista registro paciente ###################################
 @csrf_exempt
 def register_view(request):
     if request.method == "POST":
@@ -118,15 +127,8 @@ def register_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
+#################################### vista perfil paciente ################################### 
 
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from api.models import Paciente
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -175,16 +177,7 @@ def update_profile_view(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
-from api.models import Especialidad, Medico, Horario, Cita
-from django.utils.dateparse import parse_time, parse_date
-import json
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from api.models import Paciente
+
 
 class DatosPacienteView(APIView):
     permission_classes = [IsAuthenticated]
@@ -206,7 +199,7 @@ class DatosPacienteView(APIView):
             return JsonResponse(data)
         except Paciente.DoesNotExist:
             return JsonResponse({"error": "Paciente no encontrado"}, status=404)
-
+#################################### vista agendar cita ################################### 
 # Obtener todas las especialidades
 def obtener_especialidades(request):
     especialidades = Especialidad.objects.all().values('especialidad_id', 'nombre_especialidad')
@@ -218,8 +211,7 @@ def obtener_medicos_por_especialidad(request, especialidad_id):
     medicos = especialidad.medicos.all().values('usuario__nombre', 'usuario__apellidos', 'usuario_id')
     return JsonResponse(list(medicos), safe=False)
 
-# Obtener horarios disponibles
-from datetime import timedelta
+
 
 def obtener_horarios_disponibles(request, medico_id, fecha):
     try:
@@ -294,13 +286,7 @@ def crear_cita(request):
         return JsonResponse({"error": "Paciente no encontrado"}, status=404)
     except Exception as e:
         return JsonResponse({"error": f"Error al crear cita: {str(e)}"}, status=400)
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from api.models import Cita
-from django.utils.timezone import now
-
+#################################### vista proxima cita ################################### 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -332,12 +318,8 @@ def cancelar_cita(request, cita_id):
         return Response({'message': 'Cita cancelada exitosamente'}, status=200)
     except Exception as e:
         return Response({'error': f'Error al cancelar la cita: {str(e)}'}, status=400)
-    
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from api.models import Cita
+#################################### vista reprogramar cita ###################################    
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -357,12 +339,8 @@ def reprogramar_cita(request, cita_id):
         return Response({'message': 'Cita reprogramada exitosamente.'}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+#################################### vista agenda medico ###################################
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from api.models import Cita
-from django.utils.timezone import now
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -388,13 +366,8 @@ def obtener_agenda_medico(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+#################################### vista perfil medico ###################################
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from api.models import Usuario
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
 
 
 @api_view(['GET'])
@@ -446,13 +419,8 @@ def update_medico_profile_image(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+#################################### vista citas ###################################
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from api.models import Cita
-from django.utils.timezone import now
-
-from django.db.models import F
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -489,16 +457,7 @@ def cambiar_estado_cita(request, cita_id):
     except Cita.DoesNotExist:
         return Response({'error': 'La cita no existe.'}, status=404)
 
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from api.models import Especialidad
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from api.models import Especialidad
-
+#################################### vista modificar especialidad ###################################
 
 @api_view(['GET'])
 def obtener_especialidad(request):
@@ -529,12 +488,8 @@ def eliminar_especialidad(request, especialidad_id):
     except Especialidad.DoesNotExist:
         return Response({'error': 'Especialidad no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
 
+#################################### vista modificar horario ###################################
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Medico, Horario, Especialidad, Usuario
-from django.db import transaction
 @api_view(['POST'])
 def crear_medico(request):
     try:
